@@ -43,3 +43,88 @@ export async function createUser(username, email, password, type) {
   const id = result.user_id;
   return getUser(id);
 }
+
+ // post's functions
+ export async function createPost(user_id, channel_id, title, content) {
+  const query = `INSERT INTO post (user_id, channel_id, title, content) VALUES (?, ?, ?, ?)`;
+
+  try {
+      const [result] = await db.execute(query, [user_id, channel_id, title, content]);
+      const id = result.insertId;
+      return getPost(id);
+
+  } catch(error) {
+      console.error('Error saving post:', error);
+      throw new Error('Database error: Could not save post');
+  }
+}
+
+export async function getPost(id) {
+  const [rows] = await db.query(`
+      SELECT * 
+      FROM post
+      WHERE post_id = ?
+  `, [id]);
+  
+  return rows[0];
+}
+
+export async function getAllPosts() {
+  const query = `SELECT * FROM post ORDER BY created_at DESC`;
+
+  try {
+      const [rows] = await db.execute(query);
+      return rows; 
+  } catch (error) {
+      console.error('Error retrieving posts:', error);
+      throw new Error('Database error: Could not retrieve posts');
+  }
+}
+
+// comment's function
+
+export async function createComment(postId, userId, content, parent_id = null) {
+  const query = `INSERT INTO comment (post_id, user_id, content, parent_id)
+                 VALUES (?, ?, ?, ?)`;
+
+  try {
+      const [result] = await db.execute(query, [postId, userId, content, parent_id]);
+      const id = result.insertId;
+      return getComment(id);
+
+  } catch(error) {
+      console.error('Error saving comment:', error);
+      throw new Error('Database error: Could not save comment');
+  }
+}
+
+export async function getComment(id) {
+  const [rows] = await db.query(`
+      SELECT * 
+      FROM comment
+      WHERE comment_id = ?
+  `, [id]);
+  
+  return rows[0];
+}
+
+export async function getPostWithComments(postId) {
+  const postQuery = `SELECT * FROM post WHERE post_id = ?`;
+
+  const commentsQuery  = 'SELECT * FROM comment WHERE post_id = ? ORDER BY created_at ASC';
+
+  try {
+      const [postResult] = await db.execute(postQuery, [postId]);
+      const [commentsResult] = await db.execute(commentsQuery, [postId]);
+
+      const post = postResult[0];
+      const comments = commentsResult;
+      
+      return { post, comments }; 
+  } catch (error) {
+      console.error('Error fetching post and comments:', error);
+      throw new Error('Database error: Could not fetch post and comments');
+  }
+
+}
+
