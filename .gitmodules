@@ -1,0 +1,3 @@
+[submodule "waldos-frontend"]
+	path = waldos-frontend
+	url = https://github.com/RatulPradhan/Waldos_ACP
